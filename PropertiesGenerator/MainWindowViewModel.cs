@@ -248,10 +248,12 @@ namespace PropertiesGenerator
                 myIndent1 + "}" + Environment.NewLine +
                 myIndent1 + "private #Type# " + PrivatePrefix + "#Name#;" + Environment.NewLine;
 
-            Templates["compact"] = "todo";
+            Templates["compact"] =
+                myIndent1 + "public #Type# #Name# { get { return " + PrivatePrefix + "#Name#; } set { " + PrivatePrefix + "#Name# = value; RaisePropertyChanged(); } } private #Type# " + PrivatePrefix + "#Name#;";
+
             Templates["ViewModelBase"] = "todo";
 
-            if ( String.IsNullOrEmpty ( SelectedTemplateKey ) )
+            if ( String.IsNullOrEmpty( SelectedTemplateKey ) )
             {
                 SelectedTemplateKey = "default";
             }
@@ -263,7 +265,6 @@ namespace PropertiesGenerator
         {
             Properties.Add( new PropertyDesription( "string", "", "" ) );
         }
-
 
     }
 }
