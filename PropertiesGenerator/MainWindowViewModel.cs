@@ -23,7 +23,7 @@ namespace PropertiesGenerator
             set
             {
                 myPropertyType = value;
-                RaisePropertyChanged(nameof(PropertyType));
+                RaisePropertyChanged( nameof( PropertyType ) );
             }
         }
         string myPropertyType;
@@ -56,7 +56,7 @@ namespace PropertiesGenerator
         }
         string myComment;
 
-        public PropertyDesription( string thePropertyType, string theName, string theComment)
+        public PropertyDesription( string thePropertyType, string theName, string theComment )
         {
             PropertyType = thePropertyType;
             Name = theName;
@@ -94,28 +94,53 @@ namespace PropertiesGenerator
             set
             {
                 myProps = value;
-                RaisePropertyChanged(nameof(Properties));
+                RaisePropertyChanged( nameof( Properties ) );
             }
         }
         private ObservableCollection<PropertyDesription> myProps = new ObservableCollection<PropertyDesription>();
 
-        /// <summary>
-        /// Property Template 
-        /// </summary>
-        public string Template
+
+
+        public string SelectedTemplate
         {
             get
             {
-                return myTemplate;
+                return Templates[SelectedTemplateKey];
+            }
+        }
+
+
+
+        public string SelectedTemplateKey
+        {
+            get
+            {
+                return mySelectedTemplateKey;
             }
             set
             {
-                myTemplate = value;
-                RaisePropertyChanged(nameof(Template));
+                mySelectedTemplateKey = value;
+                RaisePropertyChanged();
+                RaisePropertyChanged( nameof( SelectedTemplate ) );
             }
         }
-        private string myTemplate;
+        private string mySelectedTemplateKey;
 
+
+
+        public Dictionary<string, string> Templates
+        {
+            get
+            {
+                return myTemplates;
+            }
+            set
+            {
+                myTemplates = value;
+                RaisePropertyChanged();
+            }
+        }
+        private Dictionary<string, string> myTemplates;
 
         /// <summary>
         ///Prefix for private field
@@ -129,8 +154,8 @@ namespace PropertiesGenerator
             set
             {
                 myPrivatePrefix = value;
-                updateTemplate();
-                RaisePropertyChanged(nameof(PrivatePrefix));
+                updateTemplates();
+                RaisePropertyChanged();
             }
         }
         private string myPrivatePrefix;
@@ -147,7 +172,7 @@ namespace PropertiesGenerator
             set
             {
                 myCode = value;
-                RaisePropertyChanged(nameof(ResultSourceCode));
+                RaisePropertyChanged();
             }
         }
         private string myCode;
@@ -157,6 +182,8 @@ namespace PropertiesGenerator
         /// </summary>
         public MainWindowViewModel()
         {
+            Templates = new Dictionary<string, string>();
+
             SupportedTypes = new ObservableCollection<string>()
             {
                 "string",
@@ -171,43 +198,44 @@ namespace PropertiesGenerator
             PrivatePrefix = "my";  // inkl. updateTemplate();
 
             //create some rows
-            for (int i = 0; i < 10; i++)
+            for ( int i = 0; i < 10; i++ )
             {
                 AddRow();
             }
 
-            CommandAddRow = new RelayCommand(p1 => AddRow());
+            CommandAddRow = new RelayCommand( p1 => AddRow() );
 
-            CommandGenerateCode = new RelayCommand(p1 =>
-            {
-                ResultSourceCode = "";
-                foreach (var aProp in Properties)
-                {
-                    if (!String.IsNullOrEmpty(aProp.Name))
-                    {
-                        ResultSourceCode += Template.Replace("#Name#", aProp.Name).
-                                         Replace("#Comment#", aProp.Comment).
-                                         Replace("#Type#", aProp.PropertyType);
-                        ResultSourceCode += Environment.NewLine;
-                    }
-                }
-            });
+            CommandGenerateCode = new RelayCommand( p1 =>
+             {
+                 ResultSourceCode = "";
+                 foreach ( var aProp in Properties )
+                 {
+                     if ( !String.IsNullOrEmpty( aProp.Name ) )
+                     {
+                         ResultSourceCode += SelectedTemplate.Replace( "#Name#", aProp.Name ).
+                                          Replace( "#Comment#", aProp.Comment ).
+                                          Replace( "#Type#", aProp.PropertyType );
+                         ResultSourceCode += Environment.NewLine;
+                     }
+                 }
+             } );
 
-            CommandCopyToClipboard = new RelayCommand(p1 => Clipboard.SetText(ResultSourceCode));
+            CommandCopyToClipboard = new RelayCommand( p1 => Clipboard.SetText( ResultSourceCode ) );
 
             ResultSourceCode = Environment.NewLine + "   Fill out the table and then press 'Generate Code'";
         }
 
-        private void updateTemplate()
+        private void updateTemplates()
         {
-            Template =
+            Templates["default"] =
                 myIndent1 + "/// <summary>" + Environment.NewLine +
                 myIndent1 + "/// #Comment#" + Environment.NewLine +
                 myIndent1 + "/// </summary>" + Environment.NewLine +
                 myIndent1 + "public #Type# #Name#" + Environment.NewLine +
+                myIndent1 + "{" + Environment.NewLine +
                 myIndent2 + "get" + Environment.NewLine +
                 myIndent2 + "{" + Environment.NewLine +
-                myIndent3 + "return " + PrivatePrefix +"#Name#;" + Environment.NewLine +
+                myIndent3 + "return " + PrivatePrefix + "#Name#;" + Environment.NewLine +
                 myIndent2 + "}" + Environment.NewLine +
                 myIndent2 + "set" + Environment.NewLine +
                 myIndent2 + "{" + Environment.NewLine +
@@ -217,12 +245,25 @@ namespace PropertiesGenerator
                 myIndent4 + "RaisePropertyChanged(nameof(#Name#));" + Environment.NewLine +
                 myIndent3 + "}" + Environment.NewLine +
                 myIndent2 + "}" + Environment.NewLine +
-                myIndent1 + "private #Type " + PrivatePrefix + "#Name#;" + Environment.NewLine;
+                myIndent1 + "}" + Environment.NewLine +
+                myIndent1 + "private #Type# " + PrivatePrefix + "#Name#;" + Environment.NewLine;
+
+            Templates["compact"] = "todo";
+            Templates["ViewModelBase"] = "todo";
+
+            if ( String.IsNullOrEmpty ( SelectedTemplateKey ) )
+            {
+                SelectedTemplateKey = "default";
+            }
+
+            RaisePropertyChanged( nameof( SelectedTemplate ) );
         }
 
         internal void AddRow()
         {
-            Properties.Add(new PropertyDesription("string", "", ""));
+            Properties.Add( new PropertyDesription( "string", "", "" ) );
         }
+
+
     }
 }
