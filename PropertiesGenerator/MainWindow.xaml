@@ -112,7 +112,7 @@
                           SelectedValue="{Binding SelectedTemplateKey, Mode=TwoWay}" 
                           HorizontalAlignment="Left" VerticalAlignment="Top"/>
 
-            <CheckBox Grid.Row="4" IsChecked="{Binding IsCS6}" Content="C# 6.0"/>
+            <CheckBox Grid.Row="4" IsChecked="{Binding IsCS6}" Content="use nameof() (C# 6.0)"/>
             <Button Grid.Row="5" Height="26" Width="100" Content="Info"
                     HorizontalAlignment="Left" VerticalAlignment="Top"/>
         </Grid>

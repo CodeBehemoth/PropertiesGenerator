@@ -160,6 +160,29 @@ namespace PropertiesGenerator
         private string myPrivatePrefix;
 
         /// <summary>
+        /// is C#6.0 supported? 
+        /// ( for using of nameof() )
+        /// </summary>
+        public string IsCS6
+        {
+            get
+            {
+                return myIsCS6;
+            }
+            set
+            {
+                if ( IsCS6 != value )
+                {
+                    myIsCS6 = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+        private string myIsCS6;
+
+
+
+        /// <summary>
         /// Generated source code
         /// </summary>
         public string ResultSourceCode
@@ -194,7 +217,7 @@ namespace PropertiesGenerator
                 "uint", "ulong", "short", "ushort", "byte", "sbyte",
             };
 
-            PrivatePrefix = "my";  // inkl. updateTemplate();
+            PrivatePrefix = "m_";  // inkl. updateTemplate();
 
             //create some rows
             for ( int i = 0; i < 10; i++ )
