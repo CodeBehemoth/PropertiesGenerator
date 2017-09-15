@@ -69,10 +69,9 @@ namespace PropertiesGenerator
         public ICommand CommandAddRow { get; private set; }
         public ICommand CommandGenerateCode { get; private set; }
         public ICommand CommandCopyToClipboard { get; private set; }
-        private const string myIndent1 = "    ";
-        private const string myIndent2 = "        ";
-        private const string myIndent3 = "            ";
-        private const string myIndent4 = "                ";
+
+        private static string _ = new String( ' ', 4 );
+
 
         public ObservableCollection<string> SupportedTypes
         {
@@ -225,33 +224,37 @@ namespace PropertiesGenerator
             ResultSourceCode = Environment.NewLine + "   Fill out the table and then press 'Generate Code'";
         }
 
+        private string myViewModelBaseCode =
+                _ + "public abstract class ViewModelBase : INotifyPropertyChanged" + Environment.NewLine +
+                _ + "{" + Environment.NewLine +
+                _ + _ + "public event PropertyChangedEventHandler PropertyChanged;" + Environment.NewLine +
+                Environment.NewLine +
+                _ + _ + "public void RaisePropertyChanged( [CallerMemberName] string thePropertyName = \"\" )" + Environment.NewLine +
+                _ + _ + "{" + Environment.NewLine +
+                _ + _ + _ + "PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( thePropertyName ) );" + Environment.NewLine +
+                _ + _ + "}" + Environment.NewLine +
+                _ + "}";
+
+        private readonly string myClassBeginCode =
+                _ + "public class CLASS_NAME : ViewModelBase" + Environment.NewLine +
+                _ + "{";
+
+        private readonly string myClassEndCode =
+                _ + "}";
+
         private void updateTemplates()
         {
-            Templates["default"] =
-                myIndent1 + "/// <summary>" + Environment.NewLine +
-                myIndent1 + "/// #Comment#" + Environment.NewLine +
-                myIndent1 + "/// </summary>" + Environment.NewLine +
-                myIndent1 + "public #Type# #Name#" + Environment.NewLine +
-                myIndent1 + "{" + Environment.NewLine +
-                myIndent2 + "get" + Environment.NewLine +
-                myIndent2 + "{" + Environment.NewLine +
-                myIndent3 + "return " + PrivatePrefix + "#Name#;" + Environment.NewLine +
-                myIndent2 + "}" + Environment.NewLine +
-                myIndent2 + "set" + Environment.NewLine +
-                myIndent2 + "{" + Environment.NewLine +
-                myIndent3 + "if ( #Name# != value )" + Environment.NewLine +
-                myIndent3 + "{" + Environment.NewLine +
-                myIndent4 + PrivatePrefix + "#Name# = value;" + Environment.NewLine +
-                myIndent4 + "RaisePropertyChanged(nameof(#Name#));" + Environment.NewLine +
-                myIndent3 + "}" + Environment.NewLine +
-                myIndent2 + "}" + Environment.NewLine +
-                myIndent1 + "}" + Environment.NewLine +
-                myIndent1 + "private #Type# " + PrivatePrefix + "#Name#;" + Environment.NewLine;
+            Templates["default"] = getBaseTemplate( 0, "nameof(#Name#)" );
 
             Templates["compact"] =
-                myIndent1 + "public #Type# #Name# { get { return " + PrivatePrefix + "#Name#; } set { " + PrivatePrefix + "#Name# = value; RaisePropertyChanged(); } } private #Type# " + PrivatePrefix + "#Name#;";
+                _ + "public #Type# #Name# { get { return " + PrivatePrefix + "#Name#; } set { " + PrivatePrefix + "#Name# = value; RaisePropertyChanged(); } } private #Type# " + PrivatePrefix + "#Name#;";
 
-            Templates["ViewModelBase"] = "todo";
+            Templates["full"] =
+                myViewModelBaseCode + Environment.NewLine + Environment.NewLine +
+                myClassBeginCode +
+                getBaseTemplate( 1, "" ) +
+                myClassEndCode;
+
 
             if ( String.IsNullOrEmpty( SelectedTemplateKey ) )
             {
@@ -259,6 +262,32 @@ namespace PropertiesGenerator
             }
 
             RaisePropertyChanged( nameof( SelectedTemplate ) );
+        }
+
+
+        private string getBaseTemplate( int additionalIndents, string raisePropertyChangedParam )
+        {
+            string _ = new String( ' ', ( 1 + additionalIndents ) * 4 );
+
+            return _ + "/// <summary>" + Environment.NewLine +
+                   _ + "/// #Comment#" + Environment.NewLine +
+                   _ + "/// </summary>" + Environment.NewLine +
+                   _ + "public #Type# #Name#" + Environment.NewLine +
+                   _ + "{" + Environment.NewLine +
+                   _ + _ + "get" + Environment.NewLine +
+                   _ + _ + "{" + Environment.NewLine +
+                   _ + _ + _ + "return " + PrivatePrefix + "#Name#;" + Environment.NewLine +
+                   _ + _ + "}" + Environment.NewLine +
+                   _ + _ + "set" + Environment.NewLine +
+                   _ + _ + "{" + Environment.NewLine +
+                   _ + _ + _ + "if ( #Name# != value )" + Environment.NewLine +
+                   _ + _ + _ + "{" + Environment.NewLine +
+                   _ + _ + _ + _ + PrivatePrefix + "#Name# = value;" + Environment.NewLine +
+                   _ + _ + _ + _ + "RaisePropertyChanged(nameof(#Name#));" + Environment.NewLine +
+                   _ + _ + _ + "}" + Environment.NewLine +
+                   _ + _ + "}" + Environment.NewLine +
+                   _ + "}" + Environment.NewLine +
+                   _ + "private #Type# " + PrivatePrefix + "#Name#;" + Environment.NewLine;
         }
 
         internal void AddRow()
