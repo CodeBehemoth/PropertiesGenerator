@@ -233,14 +233,14 @@ namespace PropertiesGenerator
                 _ + _ + "{" + Environment.NewLine +
                 _ + _ + _ + "PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( thePropertyName ) );" + Environment.NewLine +
                 _ + _ + "}" + Environment.NewLine +
-                _ + "}";
+                _ + "}"+ Environment.NewLine;
 
         private readonly string myClassBeginCode =
                 _ + "public class CLASS_NAME : ViewModelBase" + Environment.NewLine +
-                _ + "{";
+                _ + "{"+ Environment.NewLine;
 
         private readonly string myClassEndCode =
-                _ + "}";
+                _ + "}" + Environment.NewLine;
 
         private void updateTemplates()
         {
@@ -249,8 +249,8 @@ namespace PropertiesGenerator
             Templates["compact"] =
                 _ + "public #Type# #Name# { get { return " + PrivatePrefix + "#Name#; } set { " + PrivatePrefix + "#Name# = value; RaisePropertyChanged(); } } private #Type# " + PrivatePrefix + "#Name#;";
 
-            Templates["full"] =
-                myViewModelBaseCode + Environment.NewLine + Environment.NewLine +
+            Templates["CallerMemberName"] =
+                myViewModelBaseCode + Environment.NewLine +
                 myClassBeginCode +
                 getBaseTemplate( 1, "" ) +
                 myClassEndCode;
