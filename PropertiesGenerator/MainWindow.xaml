@@ -107,12 +107,11 @@
                        HorizontalAlignment="Left"/>
 
             <ComboBox Grid.Row="3"  Width="150" Height="26"   Margin="0" 
-                          ItemsSource="{Binding Templates}"
-                          SelectedValuePath="Key" DisplayMemberPath="Key" 
-                          SelectedValue="{Binding SelectedTemplateKey, Mode=TwoWay}" 
+                          ItemsSource="{Binding ComboBoxItems}"
+                          SelectedItem="{Binding SelectedTemplateKey}"
                           HorizontalAlignment="Left" VerticalAlignment="Top"/>
 
-            <CheckBox Grid.Row="4" IsChecked="{Binding IsCS6}" Content="use nameof() (C# 6.0)"/>
+            <CheckBox Grid.Row="4" IsChecked="{Binding IsCompact}" Content="compact"/>
             <Button Grid.Row="5" Height="26" Width="100" Content="Info"
                     Visibility="{Binding IsInfoButtonVisible, Converter={local:BoolToVisibilityConverter}}"
                     Command="{Binding CommandShowInfo}"

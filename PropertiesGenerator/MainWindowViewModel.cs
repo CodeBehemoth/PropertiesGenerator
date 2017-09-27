@@ -105,13 +105,23 @@ namespace PropertiesGenerator
         private ObservableCollection<PropertyDesription> myProps = new ObservableCollection<PropertyDesription>();
 
 
-
         public string SelectedTemplate
         {
-            get { return Templates[SelectedTemplateKey]; }
+            get { return myTemplate; }
+            set
+            {
+                myTemplate = value;
+                RaisePropertyChanged( nameof( SelectedTemplate ) );
+            }
         }
+        private string myTemplate;
 
 
+        //TODO einheitlich benennen ComboBoxItems und SelectedTemplateKey
+        public ObservableCollection<string> ComboBoxItems
+        {
+            get { return new ObservableCollection<string> { "default", "C#6.0 nameof()", "CallerMemberName" }; }
+        }
 
         public string SelectedTemplateKey
         {
@@ -123,20 +133,14 @@ namespace PropertiesGenerator
             {
                 mySelectedTemplateKey = value;
                 RaisePropertyChanged();
-                RaisePropertyChanged( nameof( SelectedTemplate ) );
+                updateTemplate();
                 RaisePropertyChanged( nameof( IsInfoButtonVisible ) );
             }
         }
-        private string mySelectedTemplateKey;
+        private string mySelectedTemplateKey = "default";
 
 
-
-        public Dictionary<string, string> Templates
-        {
-            get { return myTemplates; }
-            set { myTemplates = value; RaisePropertyChanged(); }
-        }
-        private Dictionary<string, string> myTemplates;
+        private string myRaisePropertyChangedParam = "\"#Name#\"";
 
         /// <summary>
         ///Prefix for private field
@@ -150,22 +154,27 @@ namespace PropertiesGenerator
             set
             {
                 myPrivatePrefix = value;
-                updateTemplates();
+                updateTemplate();
                 RaisePropertyChanged();
             }
         }
         private string myPrivatePrefix;
 
         /// <summary>
-        /// is C#6.0 supported? 
-        /// ( for using of nameof() )
         /// </summary>
-        public bool IsCS6
+        public bool IsCompact
         {
-            get { return isCS6; }
-            set { if ( IsCS6 != value ) { isCS6 = value; RaisePropertyChanged(); } }
+            get { return isCompact; }
+            set {
+                if ( isCompact != value )
+                {
+                    isCompact = value;
+                    updateTemplate();
+                    RaisePropertyChanged();
+                }
+            }
         }
-        private bool isCS6;
+        private bool isCompact;
 
         /// <summary>
         /// Generated source code
@@ -202,13 +211,27 @@ namespace PropertiesGenerator
             get { return SelectedTemplateKey == "CallerMemberName"; }
         }
 
+        private void updateTemplate()
+        {
+            if ( SelectedTemplateKey == "default" ) myRaisePropertyChangedParam = "\"#Name#\"";
+            if ( SelectedTemplateKey == "C#6.0 nameof()" ) myRaisePropertyChangedParam = "nameof(#Name#)";
+            if ( SelectedTemplateKey == "CallerMemberName" ) myRaisePropertyChangedParam = "";
+
+            if ( isCompact )
+            {
+                SelectedTemplate = getCompactTemplate();
+            }
+            else
+            {
+                SelectedTemplate = getBaseTemplate( 0 );
+            }
+        }
+
         /// <summary>
         /// Constructor
         /// </summary>
         public MainWindowViewModel()
         {
-            Templates = new Dictionary<string, string>();
-
             SupportedTypes = new ObservableCollection<string>()
             {
                 "string",
@@ -280,30 +303,8 @@ namespace PropertiesGenerator
         private readonly string myClassEndCode =
                 "}" + Environment.NewLine;
 
-        private void updateTemplates()
-        {
-            Templates["default"] = getBaseTemplate( 0, "nameof(#Name#)" );
 
-            Templates["compact"] =
-                _ + "public #Type# #Name# { get { return " + PrivatePrefix + "#Name#; } set { " + PrivatePrefix + "#Name# = value; RaisePropertyChanged(); } } private #Type# " + PrivatePrefix + "#Name#;";
-
-            Templates["CallerMemberName"] =
-                myViewModelBaseCode + Environment.NewLine +
-                myClassBeginCode +
-                getBaseTemplate( 1, "" ) +
-                myClassEndCode;
-
-
-            if ( String.IsNullOrEmpty( SelectedTemplateKey ) )
-            {
-                SelectedTemplateKey = "default";
-            }
-
-            RaisePropertyChanged( nameof( SelectedTemplate ) );
-        }
-
-
-        private string getBaseTemplate( int additionalIndents, string raisePropertyChangedParam )
+        private string getBaseTemplate( int additionalIndents )
         {
             string _ = new String( ' ', ( 1 + additionalIndents ) * 4 );
 
@@ -321,11 +322,21 @@ namespace PropertiesGenerator
                    _ + _ + _ + "if ( #Name# != value )" + Environment.NewLine +
                    _ + _ + _ + "{" + Environment.NewLine +
                    _ + _ + _ + _ + PrivatePrefix + "#Name# = value;" + Environment.NewLine +
-                   _ + _ + _ + _ + "RaisePropertyChanged(nameof(#Name#));" + Environment.NewLine +
+                   _ + _ + _ + _ + $"RaisePropertyChanged({myRaisePropertyChangedParam});" + Environment.NewLine +
                    _ + _ + _ + "}" + Environment.NewLine +
                    _ + _ + "}" + Environment.NewLine +
                    _ + "}" + Environment.NewLine +
                    _ + "private #Type# " + PrivatePrefix + "#Name#;" + Environment.NewLine;
+        }
+
+
+        private string getCompactTemplate()
+        {
+            string _ = new String( ' ',  4 );
+
+            return _ + "public #Type# #Name# { get { return " + PrivatePrefix + "#Name#; } " + 
+                "set { "+ PrivatePrefix + "#Name# = value; RaisePropertyChanged("+ myRaisePropertyChangedParam+"); } } " + 
+                "private #Type# " + PrivatePrefix + "#Name#;";
         }
 
         internal void AddRow()
