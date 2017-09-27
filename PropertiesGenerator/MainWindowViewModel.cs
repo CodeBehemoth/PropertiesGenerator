@@ -66,11 +66,17 @@ namespace PropertiesGenerator
 
     public class MainWindowViewModel : ViewModelBase
     {
+        private static string _ = new String( ' ', 4 );
+        private InfoView myInfoView;
+
         public ICommand CommandAddRow { get; private set; }
         public ICommand CommandGenerateCode { get; private set; }
         public ICommand CommandCopyToClipboard { get; private set; }
 
-        private static string _ = new String( ' ', 4 );
+        public ICommand CommandShowInfo { get; private set; }
+        public ICommand CommandCloseInfo { get; private set; }
+        public ICommand CommandCopyInfoCodeToClipboard { get; private set; }
+
 
 
         public ObservableCollection<string> SupportedTypes
@@ -102,10 +108,7 @@ namespace PropertiesGenerator
 
         public string SelectedTemplate
         {
-            get
-            {
-                return Templates[SelectedTemplateKey];
-            }
+            get { return Templates[SelectedTemplateKey]; }
         }
 
 
@@ -121,6 +124,7 @@ namespace PropertiesGenerator
                 mySelectedTemplateKey = value;
                 RaisePropertyChanged();
                 RaisePropertyChanged( nameof( SelectedTemplate ) );
+                RaisePropertyChanged( nameof( IsInfoButtonVisible ) );
             }
         }
         private string mySelectedTemplateKey;
@@ -129,15 +133,8 @@ namespace PropertiesGenerator
 
         public Dictionary<string, string> Templates
         {
-            get
-            {
-                return myTemplates;
-            }
-            set
-            {
-                myTemplates = value;
-                RaisePropertyChanged();
-            }
+            get { return myTemplates; }
+            set { myTemplates = value; RaisePropertyChanged(); }
         }
         private Dictionary<string, string> myTemplates;
 
@@ -163,41 +160,47 @@ namespace PropertiesGenerator
         /// is C#6.0 supported? 
         /// ( for using of nameof() )
         /// </summary>
-        public string IsCS6
+        public bool IsCS6
         {
-            get
-            {
-                return myIsCS6;
-            }
-            set
-            {
-                if ( IsCS6 != value )
-                {
-                    myIsCS6 = value;
-                    RaisePropertyChanged();
-                }
-            }
+            get { return isCS6; }
+            set { if ( IsCS6 != value ) { isCS6 = value; RaisePropertyChanged(); } }
         }
-        private string myIsCS6;
-
-
+        private bool isCS6;
 
         /// <summary>
         /// Generated source code
         /// </summary>
         public string ResultSourceCode
         {
-            get
-            {
-                return myCode;
-            }
-            set
-            {
-                myCode = value;
-                RaisePropertyChanged();
-            }
+            get { return myCode; }
+            set { myCode = value; RaisePropertyChanged(); }
         }
         private string myCode;
+
+        /// <summary>
+        /// Text in Info View
+        /// </summary>
+        public string InfoText
+        {
+            get { return myInfoText; }
+            set { myInfoText = value; RaisePropertyChanged(); }
+        }
+        private string myInfoText;
+
+        /// <summary>
+        /// Source code in Info View
+        /// </summary>
+        public string InfoCode
+        {
+            get { return myInfoCode; }
+            set { myInfoCode = value; RaisePropertyChanged(); }
+        }
+        private string myInfoCode;
+
+        public bool IsInfoButtonVisible
+        {
+            get { return SelectedTemplateKey == "CallerMemberName"; }
+        }
 
         /// <summary>
         /// Constructor
@@ -245,25 +248,37 @@ namespace PropertiesGenerator
             CommandCopyToClipboard = new RelayCommand( p1 => Clipboard.SetText( ResultSourceCode ) );
 
             ResultSourceCode = Environment.NewLine + "   Fill out the table and then press 'Generate Code'";
+
+            myInfoView = new InfoView();
+            myInfoView.DataContext = this;
+            InfoText = "To use this syntax, your class should be inherited from ViewModelBase ( see code below ).";
+            InfoCode = 
+                myViewModelBaseCode + Environment.NewLine +
+                myClassBeginCode + Environment.NewLine +
+                _ + "//your code here " + Environment.NewLine + Environment.NewLine +
+                myClassEndCode;
+            CommandShowInfo = new RelayCommand( p => myInfoView.Show() );
+            CommandCopyInfoCodeToClipboard = new RelayCommand( p1 => Clipboard.SetText( InfoCode ) );
+            CommandCloseInfo = new RelayCommand( p => myInfoView.Hide() );
         }
 
         private string myViewModelBaseCode =
-                _ + "public abstract class ViewModelBase : INotifyPropertyChanged" + Environment.NewLine +
-                _ + "{" + Environment.NewLine +
-                _ + _ + "public event PropertyChangedEventHandler PropertyChanged;" + Environment.NewLine +
+                "public abstract class ViewModelBase : INotifyPropertyChanged" + Environment.NewLine +
+                "{" + Environment.NewLine +
+                _ + "public event PropertyChangedEventHandler PropertyChanged;" + Environment.NewLine +
                 Environment.NewLine +
-                _ + _ + "public void RaisePropertyChanged( [CallerMemberName] string thePropertyName = \"\" )" + Environment.NewLine +
-                _ + _ + "{" + Environment.NewLine +
-                _ + _ + _ + "PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( thePropertyName ) );" + Environment.NewLine +
-                _ + _ + "}" + Environment.NewLine +
-                _ + "}"+ Environment.NewLine;
+                _ + "public void RaisePropertyChanged( [CallerMemberName] string thePropertyName = \"\" )" + Environment.NewLine +
+                _ + "{" + Environment.NewLine +
+                _ + _ + "PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( thePropertyName ) );" + Environment.NewLine +
+                _ + "}" + Environment.NewLine +
+                "}" + Environment.NewLine;
 
         private readonly string myClassBeginCode =
-                _ + "public class CLASS_NAME : ViewModelBase" + Environment.NewLine +
-                _ + "{"+ Environment.NewLine;
+                "public class CLASS_NAME : ViewModelBase" + Environment.NewLine +
+                "{" + Environment.NewLine;
 
         private readonly string myClassEndCode =
-                _ + "}" + Environment.NewLine;
+                "}" + Environment.NewLine;
 
         private void updateTemplates()
         {

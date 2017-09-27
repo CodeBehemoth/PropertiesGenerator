@@ -9,22 +9,24 @@
     
     <Grid Margin="10">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="32"/>
         </Grid.RowDefinitions>
 
-        <TextBox   Grid.Row="0" ScrollViewer.VerticalScrollBarVisibility="Auto" 
-                 TextWrapping="Wrap" Text="{Binding InfoText}" IsTabStop="False"/>
+        <TextBlock  Grid.Row="0" Text="{Binding InfoText}" Margin="0 20"/>
+        
+        <TextBox  Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                 TextWrapping="Wrap" Text="{Binding InfoCode}" IsTabStop="False"/>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-        <Button  Content="Copy to clipboard" Margin="20 0" 
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button  Content="Copy to clipboard" Margin="20 0" 
                     Padding="10,0" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                    Command="{Binding CommandCopyToClipboard}"
+                    Command="{Binding CommandCopyInfoCodeToClipboard}"
                     TabIndex="1110" Height="24"/>
-
             <Button  Content="Close" 
                     Padding="10,0" HorizontalAlignment="Left" VerticalAlignment="Bottom"
-                    Command="{Binding CommandCopyToClipboard}"
+                    Command="{Binding CommandCloseInfo}"
                     TabIndex="1110" Height="24"/>
         </StackPanel>
     </Grid>

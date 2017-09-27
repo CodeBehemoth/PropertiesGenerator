@@ -114,6 +114,8 @@
 
             <CheckBox Grid.Row="4" IsChecked="{Binding IsCS6}" Content="use nameof() (C# 6.0)"/>
             <Button Grid.Row="5" Height="26" Width="100" Content="Info"
+                    Visibility="{Binding IsInfoButtonVisible, Converter={local:BoolToVisibilityConverter}}"
+                    Command="{Binding CommandShowInfo}"
                     HorizontalAlignment="Left" VerticalAlignment="Top"/>
         </Grid>
         
