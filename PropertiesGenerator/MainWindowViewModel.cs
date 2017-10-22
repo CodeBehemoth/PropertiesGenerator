@@ -66,13 +66,18 @@ namespace PropertiesGenerator
 
     public class MainWindowViewModel : ViewModelBase
     {
+        private static string _ = new String( ' ', 4 );
+        private InfoView myInfoView;
+
         public ICommand CommandAddRow { get; private set; }
         public ICommand CommandGenerateCode { get; private set; }
         public ICommand CommandCopyToClipboard { get; private set; }
-        private const string myIndent1 = "    ";
-        private const string myIndent2 = "        ";
-        private const string myIndent3 = "            ";
-        private const string myIndent4 = "                ";
+
+        public ICommand CommandShowInfo { get; private set; }
+        public ICommand CommandCloseInfo { get; private set; }
+        public ICommand CommandCopyInfoCodeToClipboard { get; private set; }
+
+
 
         public ObservableCollection<string> SupportedTypes
         {
@@ -100,16 +105,23 @@ namespace PropertiesGenerator
         private ObservableCollection<PropertyDesription> myProps = new ObservableCollection<PropertyDesription>();
 
 
-
         public string SelectedTemplate
         {
-            get
+            get { return myTemplate; }
+            set
             {
-                return Templates[SelectedTemplateKey];
+                myTemplate = value;
+                RaisePropertyChanged( nameof( SelectedTemplate ) );
             }
         }
+        private string myTemplate;
 
 
+        //TODO einheitlich benennen ComboBoxItems und SelectedTemplateKey
+        public ObservableCollection<string> ComboBoxItems
+        {
+            get { return new ObservableCollection<string> { "default", "C#6.0 nameof()", "CallerMemberName" }; }
+        }
 
         public string SelectedTemplateKey
         {
@@ -121,26 +133,14 @@ namespace PropertiesGenerator
             {
                 mySelectedTemplateKey = value;
                 RaisePropertyChanged();
-                RaisePropertyChanged( nameof( SelectedTemplate ) );
+                updateTemplate();
+                RaisePropertyChanged( nameof( IsInfoButtonVisible ) );
             }
         }
-        private string mySelectedTemplateKey;
+        private string mySelectedTemplateKey = "default";
 
 
-
-        public Dictionary<string, string> Templates
-        {
-            get
-            {
-                return myTemplates;
-            }
-            set
-            {
-                myTemplates = value;
-                RaisePropertyChanged();
-            }
-        }
-        private Dictionary<string, string> myTemplates;
+        private string myRaisePropertyChangedParam = "\"#Name#\"";
 
         /// <summary>
         ///Prefix for private field
@@ -154,36 +154,84 @@ namespace PropertiesGenerator
             set
             {
                 myPrivatePrefix = value;
-                updateTemplates();
+                updateTemplate();
                 RaisePropertyChanged();
             }
         }
         private string myPrivatePrefix;
 
         /// <summary>
+        /// </summary>
+        public bool IsCompact
+        {
+            get { return isCompact; }
+            set {
+                if ( isCompact != value )
+                {
+                    isCompact = value;
+                    updateTemplate();
+                    RaisePropertyChanged();
+                }
+            }
+        }
+        private bool isCompact;
+
+        /// <summary>
         /// Generated source code
         /// </summary>
         public string ResultSourceCode
         {
-            get
-            {
-                return myCode;
-            }
-            set
-            {
-                myCode = value;
-                RaisePropertyChanged();
-            }
+            get { return myCode; }
+            set { myCode = value; RaisePropertyChanged(); }
         }
         private string myCode;
+
+        /// <summary>
+        /// Text in Info View
+        /// </summary>
+        public string InfoText
+        {
+            get { return myInfoText; }
+            set { myInfoText = value; RaisePropertyChanged(); }
+        }
+        private string myInfoText;
+
+        /// <summary>
+        /// Source code in Info View
+        /// </summary>
+        public string InfoCode
+        {
+            get { return myInfoCode; }
+            set { myInfoCode = value; RaisePropertyChanged(); }
+        }
+        private string myInfoCode;
+
+        public bool IsInfoButtonVisible
+        {
+            get { return SelectedTemplateKey == "CallerMemberName"; }
+        }
+
+        private void updateTemplate()
+        {
+            if ( SelectedTemplateKey == "default" ) myRaisePropertyChangedParam = "\"#Name#\"";
+            if ( SelectedTemplateKey == "C#6.0 nameof()" ) myRaisePropertyChangedParam = "nameof(#Name#)";
+            if ( SelectedTemplateKey == "CallerMemberName" ) myRaisePropertyChangedParam = "";
+
+            if ( isCompact )
+            {
+                SelectedTemplate = getCompactTemplate();
+            }
+            else
+            {
+                SelectedTemplate = getBaseTemplate( 0 );
+            }
+        }
 
         /// <summary>
         /// Constructor
         /// </summary>
         public MainWindowViewModel()
         {
-            Templates = new Dictionary<string, string>();
-
             SupportedTypes = new ObservableCollection<string>()
             {
                 "string",
@@ -195,7 +243,7 @@ namespace PropertiesGenerator
                 "uint", "ulong", "short", "ushort", "byte", "sbyte",
             };
 
-            PrivatePrefix = "my";  // inkl. updateTemplate();
+            PrivatePrefix = "m_";  // inkl. updateTemplate();
 
             //create some rows
             for ( int i = 0; i < 10; i++ )
@@ -223,42 +271,72 @@ namespace PropertiesGenerator
             CommandCopyToClipboard = new RelayCommand( p1 => Clipboard.SetText( ResultSourceCode ) );
 
             ResultSourceCode = Environment.NewLine + "   Fill out the table and then press 'Generate Code'";
+
+            myInfoView = new InfoView();
+            myInfoView.DataContext = this;
+            InfoText = "To use this syntax, your class should be inherited from ViewModelBase ( see code below ).";
+            InfoCode = 
+                myViewModelBaseCode + Environment.NewLine +
+                myClassBeginCode + Environment.NewLine +
+                _ + "//your code here " + Environment.NewLine + Environment.NewLine +
+                myClassEndCode;
+            CommandShowInfo = new RelayCommand( p => myInfoView.Show() );
+            CommandCopyInfoCodeToClipboard = new RelayCommand( p1 => Clipboard.SetText( InfoCode ) );
+            CommandCloseInfo = new RelayCommand( p => myInfoView.Hide() );
         }
 
-        private void updateTemplates()
+        private string myViewModelBaseCode =
+                "public abstract class ViewModelBase : INotifyPropertyChanged" + Environment.NewLine +
+                "{" + Environment.NewLine +
+                _ + "public event PropertyChangedEventHandler PropertyChanged;" + Environment.NewLine +
+                Environment.NewLine +
+                _ + "public void RaisePropertyChanged( [CallerMemberName] string thePropertyName = \"\" )" + Environment.NewLine +
+                _ + "{" + Environment.NewLine +
+                _ + _ + "PropertyChanged?.Invoke( this, new PropertyChangedEventArgs( thePropertyName ) );" + Environment.NewLine +
+                _ + "}" + Environment.NewLine +
+                "}" + Environment.NewLine;
+
+        private readonly string myClassBeginCode =
+                "public class CLASS_NAME : ViewModelBase" + Environment.NewLine +
+                "{" + Environment.NewLine;
+
+        private readonly string myClassEndCode =
+                "}" + Environment.NewLine;
+
+
+        private string getBaseTemplate( int additionalIndents )
         {
-            Templates["default"] =
-                myIndent1 + "/// <summary>" + Environment.NewLine +
-                myIndent1 + "/// #Comment#" + Environment.NewLine +
-                myIndent1 + "/// </summary>" + Environment.NewLine +
-                myIndent1 + "public #Type# #Name#" + Environment.NewLine +
-                myIndent1 + "{" + Environment.NewLine +
-                myIndent2 + "get" + Environment.NewLine +
-                myIndent2 + "{" + Environment.NewLine +
-                myIndent3 + "return " + PrivatePrefix + "#Name#;" + Environment.NewLine +
-                myIndent2 + "}" + Environment.NewLine +
-                myIndent2 + "set" + Environment.NewLine +
-                myIndent2 + "{" + Environment.NewLine +
-                myIndent3 + "if ( #Name# != value )" + Environment.NewLine +
-                myIndent3 + "{" + Environment.NewLine +
-                myIndent4 + PrivatePrefix + "#Name# = value;" + Environment.NewLine +
-                myIndent4 + "RaisePropertyChanged(nameof(#Name#));" + Environment.NewLine +
-                myIndent3 + "}" + Environment.NewLine +
-                myIndent2 + "}" + Environment.NewLine +
-                myIndent1 + "}" + Environment.NewLine +
-                myIndent1 + "private #Type# " + PrivatePrefix + "#Name#;" + Environment.NewLine;
+            string _ = new String( ' ', ( 1 + additionalIndents ) * 4 );
 
-            Templates["compact"] =
-                myIndent1 + "public #Type# #Name# { get { return " + PrivatePrefix + "#Name#; } set { " + PrivatePrefix + "#Name# = value; RaisePropertyChanged(); } } private #Type# " + PrivatePrefix + "#Name#;";
+            return _ + "/// <summary>" + Environment.NewLine +
+                   _ + "/// #Comment#" + Environment.NewLine +
+                   _ + "/// </summary>" + Environment.NewLine +
+                   _ + "public #Type# #Name#" + Environment.NewLine +
+                   _ + "{" + Environment.NewLine +
+                   _ + _ + "get" + Environment.NewLine +
+                   _ + _ + "{" + Environment.NewLine +
+                   _ + _ + _ + "return " + PrivatePrefix + "#Name#;" + Environment.NewLine +
+                   _ + _ + "}" + Environment.NewLine +
+                   _ + _ + "set" + Environment.NewLine +
+                   _ + _ + "{" + Environment.NewLine +
+                   _ + _ + _ + "if ( #Name# != value )" + Environment.NewLine +
+                   _ + _ + _ + "{" + Environment.NewLine +
+                   _ + _ + _ + _ + PrivatePrefix + "#Name# = value;" + Environment.NewLine +
+                   _ + _ + _ + _ + $"RaisePropertyChanged({myRaisePropertyChangedParam});" + Environment.NewLine +
+                   _ + _ + _ + "}" + Environment.NewLine +
+                   _ + _ + "}" + Environment.NewLine +
+                   _ + "}" + Environment.NewLine +
+                   _ + "private #Type# " + PrivatePrefix + "#Name#;" + Environment.NewLine;
+        }
 
-            Templates["ViewModelBase"] = "todo";
 
-            if ( String.IsNullOrEmpty( SelectedTemplateKey ) )
-            {
-                SelectedTemplateKey = "default";
-            }
+        private string getCompactTemplate()
+        {
+            string _ = new String( ' ',  4 );
 
-            RaisePropertyChanged( nameof( SelectedTemplate ) );
+            return _ + "public #Type# #Name# { get { return " + PrivatePrefix + "#Name#; } " + 
+                "set { "+ PrivatePrefix + "#Name# = value; RaisePropertyChanged("+ myRaisePropertyChangedParam+"); } } " + 
+                "private #Type# " + PrivatePrefix + "#Name#;";
         }
 
         internal void AddRow()
