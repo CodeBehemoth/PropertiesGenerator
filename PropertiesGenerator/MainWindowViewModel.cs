@@ -77,8 +77,6 @@ namespace PropertiesGenerator
         public ICommand CommandCloseInfo { get; private set; }
         public ICommand CommandCopyInfoCodeToClipboard { get; private set; }
 
-
-
         public ObservableCollection<string> SupportedTypes
         {
             get { return mySupportedTypes; }
@@ -319,7 +317,7 @@ namespace PropertiesGenerator
                    _ + _ + "}" + Environment.NewLine +
                    _ + _ + "set" + Environment.NewLine +
                    _ + _ + "{" + Environment.NewLine +
-                   _ + _ + _ + "if ( #Name# != value )" + Environment.NewLine +
+                   _ + _ + _ + "if ( " + PrivatePrefix + "#Name# != value )" + Environment.NewLine +
                    _ + _ + _ + "{" + Environment.NewLine +
                    _ + _ + _ + _ + PrivatePrefix + "#Name# = value;" + Environment.NewLine +
                    _ + _ + _ + _ + $"RaisePropertyChanged({myRaisePropertyChangedParam});" + Environment.NewLine +
